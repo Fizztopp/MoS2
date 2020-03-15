@@ -1,0 +1,34 @@
+#!/bin/bash
+# Standard output and error:
+#SBATCH -o ./examplejob.out
+#SBATCH -e ./examplejob.err
+#SBATCH -D ./
+#SBATCH --nodes=4
+#SBATCH --ntasks-per-node=32
+#SBATCH --cpus-per-task=1
+## Request 500 GB of main Memory per node in Units of MB:
+##SBATCH --mem=512000
+#SBATCH -J SP2_1SECS
+#SBATCH --mail-type=none
+#SBATCH --partition=short
+#SBATCH --time=04:00:00
+
+module load impi
+module load mkl
+
+export LD_LIBRARY_PATH="$MKL_HOME/lib/intel64"
+export OMP_NUM_THREADS=1
+export OMP_PLACES=cores
+
+list="0.0 0.010 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.10"
+
+count=0
+for Amp in $list
+do
+ mpicxx -O2 -std=c++11  SP2_FLOQUET.cc -DAx_peierls=$Amp -DAy_peierls=$Amp -DCOUNT=$count -L$MKL_HOME/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lm -fopenmp
+ srun ./a.out >log
+ echo $count
+ ((count++))
+done
+
+
